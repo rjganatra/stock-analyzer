@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>FundaScreen — NSE/BSE Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#08090a;--surface:#0f1012;--card:#15161a;--card2:#1c1d22;
+  --border:#25262c;--border2:#32333b;
+  --text:#f0f0f2;--muted:#7a7b85;--hint:#35363e;
+  --green:#34d399;--green-dim:#065f46;--green-bg:#022c20;
+  --amber:#fbbf24;--amber-dim:#92400e;--amber-bg:#3d1a04;
+  --red:#f87171;--red-dim:#7f1d1d;--red-bg:#2d0808;
+  --blue:#60a5fa;--blue-bg:#1a2f50;
+  --accent:#818cf8;--accent2:#a78bfa;
+  --mono:'IBM Plex Mono',monospace;
+  --head:'Syne',sans-serif;
+  --r:8px;--rl:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--head);min-height:100vh;overflow-x:hidden}
+
+/* ── Top bar ── */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:100}
+.logo{font-size:16px;font-weight:800;letter-spacing:.1em;color:var(--accent)}
+.logo em{color:var(--muted);font-style:normal;font-weight:400;font-size:12px;margin-left:8px}
+.meta-bar{display:flex;align-items:center;gap:20px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.badge{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:500;letter-spacing:.06em}
+.badge.live{background:var(--green-bg);color:var(--green);border:1px solid var(--green-dim)}
+.badge.stale{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-dim)}
+
+/* ── Layout ── */
+.page{display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 57px)}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:20px 16px;position:sticky;top:57px;height:calc(100vh - 57px);overflow-y:auto}
+.main{padding:28px 32px;min-width:0}
+
+/* ── Sidebar ── */
+.sb-label{font-size:10px;font-weight:600;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-bottom:10px;margin-top:20px}
+.sb-label:first-child{margin-top:0}
+.sb-item{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:var(--r);cursor:pointer;border:1px solid transparent;transition:all .15s;margin-bottom:3px}
+.sb-item:hover{background:var(--card);border-color:var(--border)}
+.sb-item.active{background:var(--card);border-color:var(--accent)}
+.sb-sym{font-size:13px;font-weight:600;color:var(--text)}
+.sb-score{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.sb-pill{font-size:9px;font-weight:600;padding:2px 7px;border-radius:20px;letter-spacing:.06em}
+.sb-pill.green{background:var(--green-bg);color:var(--green)}
+.sb-pill.amber{background:var(--amber-bg);color:var(--amber)}
+.sb-pill.red{background:var(--red-bg);color:var(--red)}
+
+.filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.filter-btn{font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-family:var(--head);transition:all .15s}
+.filter-btn:hover,.filter-btn.active{background:var(--card2);color:var(--text);border-color:var(--accent)}
+
+/* ── Summary cards ── */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px}
+.stat-label{font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+.stat-val{font-size:28px;font-weight:800;color:var(--text);line-height:1}
+.stat-sub{font-size:11px;font-family:var(--mono);color:var(--muted);margin-top:4px}
+
+/* ── Hero ── */
+.hero{background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:24px 28px;margin-bottom:20px;display:grid;grid-template-columns:100px 1fr auto;gap:20px;align-items:center}
+.ring-wrap{position:relative;width:88px;height:88px;flex-shrink:0}
+.ring-wrap svg{width:88px;height:88px}
+.ring-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:800;font-family:var(--mono)}
+.hero-info h1{font-size:20px;font-weight:800;margin-bottom:4px}
+.hero-sub{font-size:12px;font-family:var(--mono);color:var(--muted);margin-bottom:10px}
+.hero-sub a{color:var(--accent);text-decoration:none}
+.verdict-pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:5px 14px;border-radius:20px;letter-spacing:.04em}
+.verdict-pill.green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-dim)}
+.verdict-pill.amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-dim)}
+.verdict-pill.red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-dim)}
+.hero-right{display:flex;flex-direction:column;gap:10px;text-align:right}
+.hero-stat .sl{font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;display:block}
+.hero-stat .sv{font-size:22px;font-weight:800;font-family:var(--mono)}
+
+/* ── Score bar ── */
+.score-summary{display:flex;align-items:center;gap:20px;background:var(--card2);border-radius:var(--r);padding:12px 18px;margin-bottom:20px;font-family:var(--mono);font-size:12px}
+.ss-item{display:flex;align-items:center;gap:6px}
+.ss-dot{width:7px;height:7px;border-radius:50%}
+
+/* ── Criteria grid ── */
+.section-title{font-size:11px;font-weight:600;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:14px}
+.crit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px;margin-bottom:28px}
+.crit-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px 14px 20px;position:relative;overflow:hidden;transition:border-color .2s}
+.crit-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.crit-card.pass::before{background:var(--green)}
+.crit-card.fail::before{background:var(--red)}
+.crit-card.neutral::before{background:var(--amber)}
+.crit-card:hover{border-color:var(--border2)}
+.cn{font-size:9px;font-family:var(--mono);color:var(--hint);letter-spacing:.1em;margin-bottom:4px}
+.cl{font-size:13px;font-weight:600;margin-bottom:7px;line-height:1.4;padding-right:52px}
+.cd{font-size:11px;font-family:var(--mono);color:var(--muted);line-height:1.55}
+.cb{position:absolute;top:14px;right:14px;font-size:9px;font-weight:700;letter-spacing:.08em;padding:3px 9px;border-radius:20px}
+.cb.pass{background:var(--green-bg);color:var(--green)}
+.cb.fail{background:var(--red-bg);color:var(--red)}
+.cb.neutral{background:var(--amber-bg);color:var(--amber)}
+
+/* ── Ratios row ── */
+.ratios{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px}
+.ratio-chip{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:9px 14px;font-family:var(--mono)}
+.ratio-chip .rk{font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}
+.ratio-chip .rv{font-size:15px;font-weight:500;color:var(--text)}
+
+/* ── Ranking table ── */
+.rank-table{width:100%;border-collapse:collapse;font-size:13px}
+.rank-table th{text-align:left;padding:8px 14px;font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface);cursor:pointer;user-select:none}
+.rank-table th:hover{color:var(--text)}
+.rank-table td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+.rank-table tr:hover td{background:var(--card)}
+.rank-table tr:last-child td{border-bottom:none}
+.rank-num{font-family:var(--mono);font-size:11px;color:var(--hint);width:30px}
+.rank-sym{font-weight:700;cursor:pointer;color:var(--text)}
+.rank-sym:hover{color:var(--accent)}
+.rank-name{font-size:11px;color:var(--muted);font-family:var(--mono)}
+.rank-score{font-family:var(--mono);font-weight:600;font-size:14px}
+.pf-bar{display:flex;gap:5px;align-items:center;font-family:var(--mono);font-size:11px}
+.pf-dot{width:6px;height:6px;border-radius:50%}
+
+/* ── Empty/Loading ── */
+.centered{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;gap:12px;color:var(--muted);text-align:center}
+.spinner{width:24px;height:24px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.err{background:var(--red-bg);border:1px solid var(--red-dim);border-radius:var(--r);padding:16px;font-family:var(--mono);font-size:12px;color:var(--red)}
+
+/* ── View toggle ── */
+.view-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.vtabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:3px}
+.vtab{padding:5px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--muted);transition:all .15s;font-family:var(--head)}
+.vtab.active{background:var(--card2);color:var(--text)}
+
+/* ── Mini chart sparkline ── */
+.sparkline{display:inline-flex;align-items:flex-end;gap:2px;height:20px;margin-left:6px;vertical-align:middle}
+.spark-bar{width:3px;border-radius:1px;background:var(--green-dim);transition:height .3s}
+
+@media(max-width:900px){
+  .page{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border)}
+  .main{padding:18px 16px}
+  .stat-row{grid-template-columns:repeat(2,1fr)}
+  .hero{grid-template-columns:80px 1fr;grid-template-rows:auto auto}
+  .hero-right{grid-column:1/-1;flex-direction:row;text-align:left}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">FUNDASCREEN <em>NSE · BSE</em></div>
+  <div class="meta-bar">
+    <span id="scanTime">Loading...</span>
+    <span id="liveBadge" class="badge">—</span>
+    <span id="stockCount"></span>
+  </div>
+</div>
+
+<div class="page">
+  <aside class="sidebar">
+    <div class="sb-label">Filter</div>
+    <div class="filter-row">
+      <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+      <button class="filter-btn" onclick="setFilter('green',this)">Strong</button>
+      <button class="filter-btn" onclick="setFilter('amber',this)">Moderate</button>
+      <button class="filter-btn" onclick="setFilter('red',this)">Weak</button>
+    </div>
+    <div class="sb-label">Watchlist</div>
+    <div id="sidebarList"></div>
+  </aside>
+
+  <main class="main" id="mainArea">
+    <div class="centered"><div class="spinner"></div><span style="font-family:var(--mono);font-size:12px">Loading scan data...</span></div>
+  </main>
+</div>
+
+<script>
+let allStocks = [];
+let activeSymbol = null;
+let currentFilter = 'all';
+let currentView = 'detail';  // 'detail' | 'ranking'
+let meta = {};
+
+async function loadData(){
+  try{
+    const r = await fetch('data.json?t='+Date.now());
+    if(!r.ok) throw new Error('data.json not found — run the GitHub Action first.');
+    const d = await r.json();
+    meta = d.meta || {};
+    allStocks = d.stocks || [];
+    init();
+  } catch(e){
+    document.getElementById('mainArea').innerHTML = `<div class="err">${e.message}<br><br>If this is your first time: go to your GitHub repo → Actions → Daily Stock Scan → Run workflow.</div>`;
+  }
+}
+
+function init(){
+  // Topbar meta
+  const scanned = meta.scanned_at ? new Date(meta.scanned_at) : null;
+  const ageHrs = scanned ? (Date.now() - scanned) / 3600000 : 999;
+  document.getElementById('scanTime').textContent = scanned
+    ? `Last scan: ${scanned.toLocaleDateString('en-IN',{day:'numeric',month:'short'})} ${scanned.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})} IST`
+    : 'No scan data';
+  const badge = document.getElementById('liveBadge');
+  badge.textContent = ageHrs < 25 ? 'FRESH' : 'STALE';
+  badge.className = 'badge ' + (ageHrs < 25 ? 'live' : 'stale');
+  document.getElementById('stockCount').textContent = `${meta.success || 0} stocks`;
+
+  renderSidebar();
+  if(allStocks.length > 0){
+    showStock(allStocks[0].symbol);
+  }
+}
+
+function filtered(){
+  if(currentFilter === 'all') return allStocks;
+  return allStocks.filter(s => s.verdict_color === currentFilter);
+}
+
+function setFilter(f, btn){
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderSidebar();
+}
+
+function renderSidebar(){
+  const list = document.getElementById('sidebarList');
+  const stocks = filtered();
+  if(!stocks.length){ list.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:8px 12px">No stocks in this filter</div>'; return; }
+  list.innerHTML = stocks.map(s => `
+    <div class="sb-item ${s.symbol === activeSymbol ? 'active' : ''}" onclick="showStock('${s.symbol}')">
+      <div>
+        <div class="sb-sym">${s.symbol}</div>
+        <div class="sb-score">${s.score_pct}% · ${s.passes}P ${s.fails}F</div>
+      </div>
+      <span class="sb-pill ${s.verdict_color}">${s.verdict_color === 'green' ? 'STRONG' : s.verdict_color === 'amber' ? 'MOD' : 'WEAK'}</span>
+    </div>`).join('');
+}
+
+async function showStock(symbol){
+  activeSymbol = symbol;
+  renderSidebar();
+
+  // Try to load detailed JSON
+  const main = document.getElementById('mainArea');
+  main.innerHTML = '<div class="centered"><div class="spinner"></div></div>';
+
+  let detail = null;
+  try{
+    const r = await fetch(`results/${symbol}.json?t=`+Date.now());
+    if(r.ok) detail = await r.json();
+  } catch(e){}
+
+  // Fallback to summary data
+  if(!detail){
+    detail = allStocks.find(s => s.symbol === symbol);
+  }
+
+  if(!detail){ main.innerHTML = '<div class="err">No data found for '+symbol+'</div>'; return; }
+  renderDetail(detail, main);
+}
+
+function renderDetail(d, container){
+  const vc = d.verdict_color || 'amber';
+  const scoreColor = vc === 'green' ? 'var(--green)' : vc === 'amber' ? 'var(--amber)' : 'var(--red)';
+  const pct = d.score_pct || 0;
+  const r = 34; const circ = 2*Math.PI*r;
+  const offset = circ - (pct/100)*circ;
+
+  const topRatios = d.top_ratios || {};
+  const ratioKeys = ['Market Cap','P/E','ROE %','ROCE %','Debt / Equity','Div. Yield %','Current Price'];
+  const ratiosHtml = ratioKeys.filter(k => topRatios[k] != null)
+    .map(k => `<div class="ratio-chip"><div class="rk">${k}</div><div class="rv">${topRatios[k]}</div></div>`).join('');
+
+  const criteria = d.criteria || [];
+  const critHtml = criteria.length
+    ? criteria.map((c,i) => `
+      <div class="crit-card ${c.result}">
+        <div class="cn">CRITERION ${String(i+1).padStart(2,'0')} · WEIGHT ${c.weight}x</div>
+        <div class="cl">${c.label}</div>
+        <div class="cd">${c.detail}</div>
+        <span class="cb ${c.result}">${c.result.toUpperCase()}</span>
+      </div>`).join('')
+    : '<div style="color:var(--muted);font-size:13px">Run the scan to get detailed criteria breakdown.</div>';
+
+  const scannedAt = d.scanned_at ? new Date(d.scanned_at).toLocaleString('en-IN') : 'Unknown';
+
+  container.innerHTML = `
+    <div class="view-row">
+      <div style="font-size:11px;font-family:var(--mono);color:var(--muted)">Scanned: ${scannedAt}</div>
+      <div class="vtabs">
+        <button class="vtab active" onclick="setView('detail',this)">Detail</button>
+        <button class="vtab" onclick="setView('ranking',this)">All stocks ranking</button>
+      </div>
+    </div>
+
+    <div id="detailView">
+      <div class="hero">
+        <div class="ring-wrap">
+          <svg viewBox="0 0 80 80">
+            <circle fill="none" stroke="var(--hint)" stroke-width="6" cx="40" cy="40" r="${r}"/>
+            <circle fill="none" stroke="${scoreColor}" stroke-width="6" stroke-linecap="round"
+              cx="40" cy="40" r="${r}"
+              stroke-dasharray="${circ.toFixed(1)}"
+              stroke-dashoffset="${offset.toFixed(1)}"
+              transform="rotate(-90 40 40)"/>
+          </svg>
+          <div class="ring-num" style="color:${scoreColor}">${pct}%</div>
+        </div>
+        <div class="hero-info">
+          <h1>${d.name || d.symbol}</h1>
+          <div class="hero-sub">${d.symbol} · ${d.sector || 'NSE'} · <a href="${d.screener_url}" target="_blank">Screener.in ↗</a></div>
+          <span class="verdict-pill ${vc}">${d.verdict}</span>
+        </div>
+        <div class="hero-right">
+          <div class="hero-stat"><span class="sl">Pass / Fail / N/A</span><span class="sv" style="color:${scoreColor}">${d.passes} / ${d.fails} / ${d.neutrals}</span></div>
+        </div>
+      </div>
+
+      <div class="score-summary">
+        <div class="ss-item"><div class="ss-dot" style="background:var(--green)"></div>${d.passes} passed</div>
+        <div class="ss-item"><div class="ss-dot" style="background:var(--red)"></div>${d.fails} failed</div>
+        <div class="ss-item"><div class="ss-dot" style="background:var(--amber)"></div>${d.neutrals} neutral</div>
+        ${d.benchmark ? `<div style="margin-left:auto;color:var(--muted);font-size:11px">Benchmark · OPM ${d.benchmark.opm}% · NPM ${d.benchmark.npm}% · SalesGrowth ${d.benchmark.sales_growth}%</div>` : ''}
+      </div>
+
+      ${ratiosHtml ? `<div class="ratios">${ratiosHtml}</div>` : ''}
+
+      <div class="section-title">13-criteria breakdown</div>
+      <div class="crit-grid">${critHtml}</div>
+    </div>
+
+    <div id="rankingView" style="display:none">
+      ${renderRanking()}
+    </div>
+  `;
+}
+
+function renderRanking(){
+  const stocks = [...allStocks].sort((a,b) => b.score_pct - a.score_pct);
+  const rows = stocks.map((s,i) => {
+    const sc = s.verdict_color === 'green' ? 'var(--green)' : s.verdict_color === 'amber' ? 'var(--amber)' : 'var(--red)';
+    return `<tr>
+      <td class="rank-num">#${i+1}</td>
+      <td><div class="rank-sym" onclick="showStock('${s.symbol}')">${s.symbol}</div><div class="rank-name">${s.name || ''}</div></td>
+      <td><span style="font-size:11px;padding:2px 8px;border-radius:20px;background:${s.verdict_color === 'green' ? 'var(--green-bg)' : s.verdict_color === 'amber' ? 'var(--amber-bg)' : 'var(--red-bg)'};color:${sc}">${s.verdict}</span></td>
+      <td class="rank-score" style="color:${sc}">${s.score_pct}%</td>
+      <td><div class="pf-bar">
+        <div class="pf-dot" style="background:var(--green)"></div>${s.passes}
+        <div class="pf-dot" style="background:var(--red);margin-left:6px"></div>${s.fails}
+        <div class="pf-dot" style="background:var(--amber);margin-left:6px"></div>${s.neutrals}
+      </div></td>
+      <td style="font-size:11px;font-family:var(--mono);color:var(--muted)">${s.sector || '—'}</td>
+      <td><a href="${s.screener_url}" target="_blank" style="color:var(--accent);font-size:11px;font-family:var(--mono);text-decoration:none">View ↗</a></td>
+    </tr>`;
+  }).join('');
+
+  return `<table class="rank-table">
+    <thead><tr>
+      <th>#</th><th>Stock</th><th>Verdict</th><th>Score</th><th>P/F/N</th><th>Sector</th><th></th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+function setView(view, btn){
+  currentView = view;
+  document.querySelectorAll('.vtab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('detailView').style.display = view === 'detail' ? '' : 'none';
+  document.getElementById('rankingView').style.display = view === 'ranking' ? '' : 'none';
+}
+
+loadData();
+</script>
+</body>
+</html>
