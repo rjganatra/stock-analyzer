@@ -1,0 +1,24 @@
+{
+  "watchlist": [
+    "TITAN",
+    "HDFCBANK",
+    "INFY",
+    "TCS",
+    "NESTLEIND",
+    "ASIANPAINT",
+    "BAJFINANCE",
+    "PIDILITIND",
+    "DMART",
+    "WIPRO"
+  ],
+  "settings": {
+    "industry_override": {
+      "HDFCBANK": "Banking",
+      "BAJFINANCE": "NBFC",
+      "NESTLEIND": "FMCG",
+      "ASIANPAINT": "Consumer",
+      "DMART": "Consumer",
+      "PIDILITIND": "Chemical"
+    }
+  }
+}
