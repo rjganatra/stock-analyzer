@@ -1,3 +1,4 @@
+cat > /home/claude/stock_analyzer_gh/.github/workflows/deploy-pages.yml << 'EOF'
 name: Deploy GitHub Pages
 
 on:
@@ -22,13 +23,13 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
-      - uses: actions/checkout@v4.2.2
-      - uses: actions/configure-pages@v5.0.0
-      - uses: actions/upload-pages-artifact@v3.0.1
+      - uses: actions/checkout@v5
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
         with:
           path: docs/
       - id: deployment
-        uses: actions/deploy-pages@v4.0.5
+        uses: actions/deploy-pages@v4
+EOF
+echo "done"
