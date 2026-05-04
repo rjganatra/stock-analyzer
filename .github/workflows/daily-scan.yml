@@ -1,3 +1,4 @@
+cat > /home/claude/stock_analyzer_gh/.github/workflows/daily-scan.yml << 'EOF'
 name: Daily Stock Scan
 
 on:
@@ -23,22 +24,20 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write   # needed to push results back to repo
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
-        uses: actions/setup-python@v5.6.0
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
       - name: Cache pip
-        uses: actions/cache@v4.2.3
+        uses: actions/cache@v5
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
@@ -49,7 +48,7 @@ jobs:
       - name: Override watchlist if symbols provided
         if: ${{ github.event.inputs.symbols != '' }}
         run: |
-          python - <<'EOF'
+          python - <<'PYEOF'
           import json, os
           symbols = [s.strip().upper() for s in os.environ['SYMBOLS'].split(',') if s.strip()]
           with open('watchlist.json') as f:
@@ -58,7 +57,7 @@ jobs:
           with open('watchlist.json', 'w') as f:
               json.dump(wl, f, indent=2)
           print(f"Watchlist overridden with: {symbols}")
-          EOF
+          PYEOF
         env:
           SYMBOLS: ${{ github.event.inputs.symbols }}
 
@@ -72,3 +71,5 @@ jobs:
           git add results/ docs/
           git diff --staged --quiet || git commit -m "scan: $(date -u '+%Y-%m-%d %H:%M UTC') — auto update"
           git push
+EOF
+echo "done"
