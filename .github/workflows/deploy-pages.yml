@@ -1,4 +1,3 @@
-cat > /home/claude/stock_analyzer_gh/.github/workflows/deploy-pages.yml << 'EOF'
 name: Deploy GitHub Pages
 
 on:
@@ -31,5 +30,3 @@ jobs:
           path: docs/
       - id: deployment
         uses: actions/deploy-pages@v4
-EOF
-echo "done"
